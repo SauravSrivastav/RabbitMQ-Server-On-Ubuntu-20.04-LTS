@@ -1,0 +1,5 @@
+RabbitMQ Server On Ubuntu 20.04 LTS- Imp URL's
+
+https://bckinfo.com/how-to-install-erlang-on-ubuntu-20-04-lts/
+
+https://bckinfo.com/how-to-install-rabbitmq-server-on-ubuntu-20-04-lts/
