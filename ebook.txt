@@ -1,0 +1,163 @@
+Title: RabbitMQ Installation Script Documentation
+
+Table of Contents:
+
+1. Introduction
+2. Prerequisites
+3. Usage
+4. Important Note
+5. Features
+6. Root Check
+7. Dependency Check and Installation
+8. Importing GPG Keys
+9. Adding RabbitMQ Repositories
+10. Erlang Package Installation
+11. RabbitMQ Server Installation
+12. Downloading and Installing rabbitmq_delayed_message_exchange Plugin
+13. Enabling RabbitMQ Plugins
+14. Setting RabbitMQ Policy for High Availability
+15. User Management
+16. Installation of openssh-server Package
+17. Configuring ufw Firewall
+18. Testing the Installation
+19. Conclusion
+
+Chapter 1: Introduction
+
+The RabbitMQ Installation Script is a powerful tool that automates the installation and configuration process of RabbitMQ server on Ubuntu-based systems. RabbitMQ is a widely used open-source message broker that provides reliable messaging between applications and systems.
+
+This script eliminates the manual steps involved in setting up RabbitMQ, ensuring a smooth and hassle-free installation experience. By using the RabbitMQ Installation Script, users can save time and effort, enabling them to quickly get started with RabbitMQ.
+
+Chapter 2: Prerequisites
+
+Before using the RabbitMQ Installation Script, ensure that the following prerequisites are met:
+
+- An Ubuntu-based system (tested on Ubuntu 20.04)
+- Root access or sudo privileges
+
+Chapter 3: Usage
+
+To use the RabbitMQ Installation Script, follow these steps:
+
+1. Download the script: rabbitmq_installation.sh
+2. Open a terminal and navigate to the directory where the script is saved.
+3. Make the script executable by running the command: chmod +x rabbitmq_installation.sh
+4. Execute the script with root privileges using either of the following commands:
+   - sudo ./rabbitmq_installation.sh
+   - su -c ./rabbitmq_installation.sh (if you're already logged in as root)
+
+Chapter 4: Important Note
+
+Before running the RabbitMQ Installation Script, it is important to note the following:
+
+1. Use this script at your own risk. While it has been designed to automate the installation process, it is always recommended to review and understand the code before executing it.
+
+2. This script is specifically created for Ubuntu-based systems and has been tested on Ubuntu 20.04. Using it on other operating systems may cause unexpected issues.
+
+Chapter 5: Features
+
+The RabbitMQ Installation Script offers the following features:
+
+- Root check to ensure the script is run with appropriate privileges.
+- Dependency check and installation of required packages.
+- Importing GPG keys for secure package installation.
+- Adding RabbitMQ repositories for easy access to the latest versions.
+- Erlang package installation for RabbitMQ compatibility.
+- RabbitMQ server installation and setup.
+- Downloading and installing the rabbitmq_delayed_message_exchange plugin.
+- Enabling necessary RabbitMQ plugins.
+- Setting a RabbitMQ policy for high availability.
+- User management for secure access control.
+- Installation of the openssh-server package for remote access.
+- Configuring the ufw firewall for network security.
+
+Chapter 6: Root Check
+
+The RabbitMQ Installation Script begins by checking if it is run with root privileges. This check ensures that the script has the necessary permissions to perform system-level operations. If the script is not run as root or with sudo, an error message is displayed, and the script exits.
+
+Chapter 7: Dependency Check and Installation
+
+The script checks for required dependencies and installs them if they are not already present. The dependencies checked and installed include curl, gnupg, and apt-transport-https. These dependencies are essential for retrieving and installing RabbitMQ and its associated packages.
+
+Chapter 8: Importing GPG Keys
+
+To ensure the authenticity of the packages being
+
+ installed, the script imports GPG keys used by RabbitMQ and its repositories. GPG keys are cryptographic signatures that verify the integrity of the packages. The script imports the following GPG keys:
+
+1. Team RabbitMQ's main signing key
+2. GPG key for net.launchpad.ppa.rabbitmq.erlang
+3. GPG key for io.packagecloud.rabbitmq
+
+Chapter 9: Adding RabbitMQ Repositories
+
+The script adds the RabbitMQ apt repositories to the system's package sources. These repositories provide access to the latest RabbitMQ and Erlang packages. The script adds the repositories for Erlang and RabbitMQ separately, each with their respective GPG keys for package integrity verification.
+
+Chapter 10: Erlang Package Installation
+
+Before installing RabbitMQ, the script checks for the presence of required Erlang packages. If any of the Erlang packages are missing, the script installs them to ensure RabbitMQ compatibility. The Erlang packages include essential components for running RabbitMQ.
+
+Chapter 11: RabbitMQ Server Installation
+
+The script installs the RabbitMQ server using the apt-get package manager. If RabbitMQ is not already installed on the system, the script proceeds to install it. This step ensures that the RabbitMQ server is properly set up and ready for use.
+
+Chapter 12: Downloading and Installing rabbitmq_delayed_message_exchange Plugin
+
+The script downloads and installs the rabbitmq_delayed_message_exchange plugin for RabbitMQ. This plugin enables delayed message delivery, allowing messages to be held and delivered at a specified time in the future. The plugin is downloaded from the official RabbitMQ GitHub repository and installed in the appropriate directory.
+
+Chapter 13: Enabling RabbitMQ Plugins
+
+The script enables essential RabbitMQ plugins for enhanced functionality. The enabled plugins include rabbitmq_management, rabbitmq_prometheus, and rabbitmq_delayed_message_exchange. These plugins provide management capabilities, monitoring support, and delayed message exchange functionality, respectively.
+
+Chapter 14: Setting RabbitMQ Policy for High Availability
+
+To ensure high availability of messages, the script sets a RabbitMQ policy. The policy, named "ha-all," is set to the virtual host "." and specifies that all queues should be mirrored across all available nodes in the RabbitMQ cluster. This configuration enhances message durability and reliability.
+
+Chapter 15: User Management
+
+The script manages RabbitMQ user accounts by deleting the default guest user and creating a new user with administrative privileges. The default guest user is removed to improve security, and a new user named "operatorrmq" is added with the password "Passw0rdPassw0rd" and assigned the administrator tag. This user has permissions to perform administrative tasks.
+
+Chapter 16: Installation of openssh-server Package
+
+To enable remote access to the RabbitMQ server, the script installs the openssh-server package. This package allows secure remote login via SSH, providing a means to manage the server from remote locations.
+
+Chapter 17: Configuring ufw Firewall
+
+For improved security, the script configures the ufw firewall to allow necessary network traffic. The SSH port (default: 22) and several RabbitMQ ports (5672, 15672, 15692, 4369, and 25672) are opened to allow incoming connections. ufw is then enabled to enforce the firewall rules.
+
+Chapter 18: Testing the Installation
+
+After running the RabbitMQ Installation Script, it is important to test whether everything is working correctly. This chapter provides instructions on how to test the installation to ensure that RabbitMQ is functioning properly.
+
+Section 18.1: Verifying RabbitMQ Status
+
+To verify the status of RabbitMQ, follow these steps:
+
+1. Open a terminal.
+2. Run the command: rabbitmqctl status
+
+If RabbitMQ is running correctly, you will see information about the Rabbit
+
+MQ nodes, including their status and other details.
+
+Section 18.2: Accessing the RabbitMQ Management Interface
+
+To access the RabbitMQ management interface, which provides a web-based interface for managing and monitoring RabbitMQ, follow these steps:
+
+1. Open a web browser.
+2. Enter the URL: http://localhost:15672/
+3. Enter the username and password for the administrator account created during the installation.
+
+If successful, you will be able to access the RabbitMQ management interface and perform various management tasks.
+
+Section 18.3: Testing Message Exchange
+
+To test if RabbitMQ is properly exchanging messages, you can use a simple script to send and receive messages. The script should utilize RabbitMQ's messaging API and demonstrate the ability to send and receive messages between producers and consumers.
+
+Chapter 19: Conclusion
+
+In conclusion, the RabbitMQ Installation Script simplifies the installation and configuration process of RabbitMQ on Ubuntu-based systems. By automating the setup steps, the script saves time and effort, allowing users to quickly start using RabbitMQ for reliable messaging.
+
+By following the provided instructions and testing the installation, users can ensure that RabbitMQ is functioning correctly and ready for production use. The script also enhances security by managing user accounts, enabling remote access, and configuring the firewall.
+
+With RabbitMQ installed and properly configured, users can leverage its powerful messaging capabilities to build scalable and robust applications that require reliable communication between components.
