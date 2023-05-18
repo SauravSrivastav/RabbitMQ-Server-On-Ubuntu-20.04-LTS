@@ -1,0 +1,88 @@
+#!/bin/bash
+
+set -e
+
+# Check if script is run as root
+if [ "$(id -u)" -ne 0 ]; then
+    echo "Please run this script as root or using sudo."
+    exit 1
+fi
+
+# Function to update /etc/hosts file
+update_hosts_file() {
+    local ip="$1"
+    local hostname="$2"
+    echo "Updating /etc/hosts file with IP: $ip and hostname: $hostname"
+    echo "$ip $hostname" >> /etc/hosts
+}
+
+# Function to copy and set permissions for the Erlang cookie
+copy_erlang_cookie() {
+    local source_host="$1"
+    local target_host="$2"
+    echo "Copying Erlang cookie from $source_host to $target_host..."
+    scp -o StrictHostKeyChecking=no "/var/lib/rabbitmq/.erlang.cookie" "operatorrmq@$target_host:/var/lib/rabbitmq/"
+    ssh -o StrictHostKeyChecking=no "operatorrmq@$target_host" "sudo chmod 600 /var/lib/rabbitmq/.erlang.cookie"
+}
+
+# Function to restart RabbitMQ service on a host
+restart_rabbitmq_service() {
+    local host="$1"
+    echo "Restarting RabbitMQ service on $host..."
+    ssh -o StrictHostKeyChecking=no "operatorrmq@$host" "sudo systemctl restart rabbitmq-server"
+}
+
+# Function to stop RabbitMQ app on a host
+stop_rabbitmq_app() {
+    local host="$1"
+    echo "Stopping RabbitMQ app on $host..."
+    ssh -o StrictHostKeyChecking=no "operatorrmq@$host" "sudo rabbitmqctl stop_app"
+}
+
+# Function to join a RabbitMQ cluster on a host
+join_rabbitmq_cluster() {
+    local host="$1"
+    local cluster_node="$2"
+    echo "Joining RabbitMQ cluster on $host..."
+    ssh -o StrictHostKeyChecking=no "operatorrmq@$host" "sudo rabbitmqctl join_cluster $cluster_node"
+}
+
+# Function to start RabbitMQ app on a host
+start_rabbitmq_app() {
+    local host="$1"
+    echo "Starting RabbitMQ app on $host..."
+    ssh -o StrictHostKeyChecking=no "operatorrmq@$host" "sudo rabbitmqctl start_app"
+}
+
+# Array of node IP addresses and hostnames
+nodes=("20.55.43.255 npstgx-rmq-node1" "20.124.84.167 npstgx-rmq-node2")
+
+# Update /etc/hosts file with IP addresses and hostnames
+for node in "${nodes[@]}"; do
+    ip=$(echo "$node" | awk '{print $1}')
+    hostname=$(echo "$node" | awk '{print $2}')
+    update_hosts_file "$ip" "$hostname"
+done
+
+# Check if script is run on the first node in the list
+if hostname -f | grep -q "$(echo "${nodes[0]}" | awk '{print $2}')"; then
+    for ((i = 1; i < ${#nodes[@]}; i++)); do
+        # Copy Erlang cookie to the additional nodes
+        copy_erlang_cookie "$(echo "${nodes[0]}" | awk '{print $2}')" "$(echo "${nodes[$i]}" | awk '{print $2}')"
+
+        # Restart RabbitMQ on the additional nodes
+        restart_rabbitmq_service "$(echo "${nodes[$i]}" | awk '{print $2}')"
+
+        # Stop app on the first node
+        stop_rabbitmq_app "$(echo "${nodes[0]}" | awk '{print $2}')"
+
+        # Join cluster on the additional nodes
+        join_rabbitmq_cluster "$(echo "${nodes[$i]}" | awk '{print $2}')" "rabbit@$(echo "${nodes[0]}" | awk '{print $2}')"
+
+        # Start app on the additional nodes
+        start_rabbitmq_app "$(echo "${nodes[$i]}" | awk '{print $2}')"
+    done
+else
+    echo "This script should be run on the first node: $(echo "${nodes[0]}" | awk '{print $2}')."
+    exit 1
+fi
