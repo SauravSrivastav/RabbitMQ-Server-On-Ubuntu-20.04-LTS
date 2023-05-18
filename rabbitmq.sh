@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 set -e
 
@@ -61,7 +61,7 @@ EOF
 fi
 
 # Install Erlang packages
-install_erlang_packages() {
+erlang_packages() {
     local packages=("erlang-base" "erlang-asn1" "erlang-crypto" "erlang-eldap"
                     "erlang-inets" "erlang-mnesia" "erlang-os-mon" "erlang-parsetools" "erlang-public-key"
                     "erlang-runtime-tools" "erlang-snmp" "erlang-ssl"
@@ -78,7 +78,7 @@ install_erlang_packages() {
     fi
 }
 
-install_erlang_packages
+erlang_packages
 
 # Install RabbitMQ server
 if ! dpkg -s rabbitmq-server &> /dev/null; then
@@ -115,7 +115,9 @@ apt-get install -y openssh-server
 # Configure ufw firewall
 echo "Configuring ufw firewall..."
 ufw allow ssh
-ufw allow proto tcp from any to any port 5672,15672,15692,4369,25672/tcp
+for port in 5672 15672 15692 4369 25672; do
+    ufw allow proto tcp from any to any port $port
+done
 ufw --force enable
 
 echo "Installation completed successfully."
