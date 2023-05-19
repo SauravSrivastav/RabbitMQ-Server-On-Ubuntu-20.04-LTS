@@ -1,0 +1,477 @@
+Title: RabbitMQ Installation Script Documentation
+
+Table of Contents:
+
+Introduction
+Prerequisites
+Usage
+Important Note
+Features
+Root Check
+Dependency Check and Installation
+Importing GPG Keys
+Adding RabbitMQ Repositories
+Erlang Package Installation
+RabbitMQ Server Installation
+Downloading and Installing rabbitmq_delayed_message_exchange Plugin
+Enabling RabbitMQ Plugins
+Setting RabbitMQ Policy for High Availability
+User Management
+Installation of openssh-server Package
+Configuring ufw Firewall
+Testing the Installation
+Conclusion
+
+
+Chapter 1: Introduction
+
+The RabbitMQ Installation Script is a powerful tool that automates the installation and configuration process of RabbitMQ server on Ubuntu-based systems. RabbitMQ is a widely used open-source message broker that provides reliable messaging between applications and systems.
+
+This script eliminates the manual steps involved in setting up RabbitMQ, ensuring a smooth and hassle-free installation experience. By using the RabbitMQ Installation Script, users can save time and effort, enabling them to quickly get started with RabbitMQ.
+
+Chapter 2: Prerequisites
+
+Before using the RabbitMQ Installation Script, ensure that the following prerequisites are met:
+
+An Ubuntu-based system (tested on Ubuntu 20.04)
+Root access or sudo privileges
+
+Chapter 3: Usage
+
+To use the RabbitMQ Installation Script, follow these steps:
+
+Download the script: rabbitmq_installation.sh
+Open a terminal and navigate to the directory where the script is saved.
+Make the script executable by running the command: chmod +x rabbitmq_installation.sh
+Execute the script with root privileges using either of the following commands:
+sudo ./rabbitmq_installation.sh
+su -c ./rabbitmq_installation.sh (if you're already logged in as root)
+
+Chapter 4: Important Note
+
+Before running the RabbitMQ Installation Script, it is important to note the following:
+
+Use this script at your own risk. While it has been designed to automate the installation process, it is always recommended to review and understand the code before executing it.
+
+This script is specifically created for Ubuntu-based systems and has been tested on Ubuntu 20.04. Using it on other operating systems may cause unexpected issues.
+
+Chapter 5: Features
+
+The RabbitMQ Installation Script offers the following features:
+
+Root check to ensure the script is run with appropriate privileges.
+Dependency check and installation of required packages.
+Importing GPG keys for secure package installation.
+Adding RabbitMQ repositories for easy access to the latest versions.
+Erlang package installation for RabbitMQ compatibility.
+RabbitMQ server installation and setup.
+Downloading and installing the rabbitmq_delayed_message_exchange plugin.
+Enabling necessary RabbitMQ plugins.
+Setting a RabbitMQ policy for high availability.
+User management for secure access control.
+Installation of the openssh-server package for remote access.
+Configuring the ufw firewall for network security.
+
+Chapter 6: Root Check
+
+The RabbitMQ Installation Script begins by checking if it is run with root privileges. This check ensures that the script has the necessary permissions to perform system-level operations. If the script is not run as root or with sudo, an error message is displayed, and the script exits.
+  
+# Check if script is run as root
+if [ "$(id -u)" -ne 0 ]; then
+    echo "Please run this script as root or using sudo."
+    exit 1
+fi
+
+
+Chapter 7: Dependency Check and Installation
+
+The script checks for required dependencies and installs them if they are not already present. The dependencies checked and installed include curl, gnupg, and apt-transport-https. These dependencies are essential for retrieving and installing RabbitMQ and its associated packages.
+ 
+  
+# Check for required dependencies and install if necessary
+check_dependency() {
+    local command_name="$1"
+    local package_name="$2"
+    if ! command -v "$command_name" &> /dev/null; then
+        echo "$package_name is not installed. Installing $package_name..."
+        apt-get install -y "$package_name"
+    else
+        echo "$package_name is already installed."
+    fi
+}
+
+# Check and install dependencies
+check_dependency curl curl
+check_dependency gpg gpg
+check_dependency apt-transport-https apt-transport-https
+
+
+Chapter 8: Importing GPG Keys
+
+To ensure the authenticity of the packages being installed, the script imports GPG keys used by RabbitMQ and its repositories. GPG keys are cryptographic signatures that verify the integrity of the packages. 
+
+The script imports the following GPG keys:
+
+1. Team RabbitMQ's main signing key
+2. GPG key for net.launchpad.ppa.rabbitmq.erlang
+3. GPG key for io.packagecloud.rabbitmq
+ 
+# Import GPG keys
+import_gpg_key() {
+    local key_url="$1"
+    echo "Importing GPG key from $key_url..."
+    curl -sSL "$key_url" | gpg --dearmor | apt-key add -
+}
+
+# Import RabbitMQ signing key
+import_gpg_key https://www.rabbitmq.com/rabbitmq-release-signing-key.asc
+# Import GPG key for net.launchpad.ppa.rabbitmq.erlang
+import_gpg_key https://packagecloud.io/rabbitmq/erlang/gpgkey
+# Import GPG key for io.packagecloud.rabbitmq
+import_gpg_key https://packagecloud.io/rabbitmq/rabbitmq-server/gpgkey
+
+
+Chapter 9: Adding RabbitMQ Repositories
+
+The script adds the RabbitMQ apt repositories to the system's package sources. These repositories provide access to the latest RabbitMQ and Erlang packages. The script adds the repositories for Erlang and RabbitMQ separately, each with their respective GPG keys for package integrity verification.
+  
+# Add RabbitMQ repositories
+add_rabbitmq_repositories() {
+    local repo_url="$1"
+    echo "Adding RabbitMQ repository: $repo_url"
+    echo "deb $repo_url $(lsb_release -cs) main" | tee /etc/apt/sources.list.d/rabbitmq.list
+}
+
+# Add Erlang repository
+add_rabbitmq_repositories "https://packagecloud.io/rabbitmq/erlang/ubuntu/"
+# Add RabbitMQ repository
+add_rabbitmq_repositories "https://packagecloud.io/rabbitmq/rabbitmq-server/ubuntu/"
+
+
+Chapter 10: Erlang Package Installation
+
+Before installing RabbitMQ, the script checks for the presence of required Erlang packages. If any of the Erlang packages are missing, the script installs them to ensure RabbitMQ compatibility. The Erlang packages include essential components for running RabbitMQ.
+ 
+  
+# Check and install Erlang packages
+install_erlang_packages() {
+    local erlang_packages=("erlang-base" "erlang-asn1" "erlang-crypto" "erlang-eldap" "erlang-ftp" "erlang-inets" "erlang-mnesia" "erlang-os-mon" "erlang-parsetools" "erlang-public-key" "erlang-runtime-tools" "erlang-snmp" "erlang-ssl" "erlang-syntax-tools" "erlang-tftp" "erlang-tools" "erlang-xmerl")
+    local missing_packages=()
+    for package in "${erlang_packages[@]}"; do
+        if ! dpkg -s "$package" &> /dev/null; then
+            missing_packages+=("$package")
+        fi
+    done
+
+    if [ "${#missing_packages[@]}" -gt 0 ]; then
+        echo "Installing required Erlang packages..."
+        apt-get install -y "${missing_packages[@]}"
+    else
+        echo "All required Erlang packages are already installed."
+    fi
+}
+
+install_erlang_packages
+
+
+Chapter 11: RabbitMQ Server Installation
+
+The script installs the RabbitMQ server using the apt-get package manager. If RabbitMQ is not already installed on the system, the script proceeds to install it. This step ensures that the RabbitMQ server is properly set up and ready for use.
+ 
+  
+# Install RabbitMQ server
+install_rabbitmq_server() {
+    if ! dpkg -s rabbitmq-server &> /dev/null; then
+        echo "Installing RabbitMQ server..."
+        apt-get install -y rabbitmq-server
+    else
+        echo "RabbitMQ server is already installed."
+    fi
+}
+
+install_rabbitmq_server
+
+
+Chapter 12: Downloading and Installing rabbitmq_delayed_message_exchange Plugin
+
+The script downloads and installs the rabbitmq_delayed_message_exchange plugin for RabbitMQ. This plugin enables delayed message delivery, allowing messages to be held and delivered at a specified time in the future. The plugin is downloaded from the official RabbitMQ GitHub repository and installed in the appropriate directory.
+ 
+  
+# Download and install rabbitmq_delayed_message_exchange plugin
+install_delayed_message_exchange_plugin() {
+    local plugin_url="https://github.com/rabbitmq/rabbitmq-delayed-message-exchange/releases/download/3.8.0/rabbitmq_delayed_message_exchange-3.8.0.ez"
+    local plugin_dir="/usr/lib/rabbitmq/plugins"
+    local plugin_file="$plugin_dir/rabbitmq_delayed_message_exchange.ez"
+
+    echo "Downloading rabbitmq_delayed_message_exchange plugin..."
+    curl -sSL "$plugin_url" -o "$plugin_file"
+
+    echo "Enabling rabbitmq_delayed_message_exchange plugin..."
+    rabbitmq-plugins enable rabbitmq_delayed_message_exchange
+}
+
+install_delayed_message_exchange_plugin
+
+Chapter 13: Enabling RabbitMQ Plugins
+
+The script downloads and installs the rabbitmq_delayed_message_exchange plugin for RabbitMQ. This plugin enables delayed message delivery, allowing messages to be held and delivered at a specified time in the future. The plugin is downloaded from the official RabbitMQ GitHub repository and installed in the appropriate directory.
+  
+# Enable required RabbitMQ plugins
+enable_rabbitmq_plugins() {
+    local plugins=("rabbitmq_management" "rabbitmq_delayed_message_exchange")
+    for plugin in "${plugins[@]}"; do
+        if ! rabbitmq-plugins list -e | grep -q "$plugin"; then
+            echo "Enabling $plugin plugin..."
+            rabbitmq-plugins enable "$plugin"
+        else
+            echo "$plugin plugin is already enabled."
+        fi
+    done
+}
+
+enable_rabbitmq_plugins
+
+Chapter 14: Setting RabbitMQ Policy for High Availability
+
+The script downloads and installs the rabbitmq_delayed_message_exchange plugin for RabbitMQ. This plugin enables delayed message delivery, allowing messages to be held and delivered at a specified time in the future. The plugin is downloaded from the official RabbitMQ GitHub repository and installed in the appropriate directory.
+ 
+  
+# Set RabbitMQ policy for high availability
+set_rabbitmq_policy() {
+    local policy_name="ha-all"
+    local pattern="^(?!amq\.).*"
+
+    if ! rabbitmqctl list_policies | grep -q "$policy_name"; then
+        echo "Setting RabbitMQ policy for high availability..."
+        rabbitmqctl set_policy "$policy_name" "$pattern" '{"ha-mode":"all"}'
+    else
+        echo "RabbitMQ policy for high availability is already set."
+    fi
+}
+
+set_rabbitmq_policy
+
+
+Chapter 15: User Management
+
+The script manages RabbitMQ user accounts by deleting the default guest user and creating a new user with administrative privileges. The default guest user is removed to improve security, and a new user named "operatorrmq" is added with the password "Passw0rdPassw0rd" and assigned the administrator tag. This user has permissions to perform administrative tasks.
+  
+# Create RabbitMQ user
+create_rabbitmq_user() {
+    local username="$1"
+    local password="$2"
+
+    echo "Creating RabbitMQ user: $username"
+    rabbitmqctl add_user "$username" "$password"
+
+    echo "Setting permissions for $username"
+    rabbitmqctl set_permissions "$username" ".*" ".*" ".*"
+    rabbitmqctl set_user_tags "$username" "administrator"
+}
+
+# Example usage: create_rabbitmq_user "myuser" "mypassword"
+
+
+Chapter 16: Installation of openssh-server Package
+
+To enable remote access to the RabbitMQ server, the script installs the openssh-server package. This package allows secure remote login via SSH, providing a means to manage the server from remote locations.
+  
+# Check and install openssh-server package
+install_openssh_server() {
+    if ! dpkg -s openssh-server &> /dev/null; then
+        echo "Installing openssh-server package..."
+        apt-get install -y openssh-server
+    else
+        echo "openssh-server package is already installed."
+    fi
+}
+
+install_openssh_server
+
+
+Chapter 17: Configuring ufw Firewall
+
+For improved security, the script configures the ufw firewall to allow necessary network traffic. The SSH port (default: 22) and several RabbitMQ ports (5672, 15672, 15692, 4369, and 25672) are opened to allow incoming connections. ufw is then enabled to enforce the firewall rules.
+  
+# Configure ufw firewall
+configure_ufw_firewall() {
+    local ssh_port="$1"
+
+    echo "Configuring ufw firewall..."
+    ufw allow "$ssh_port"
+    ufw allow 5672
+    ufw allow 15672
+    ufw --force enable
+}
+
+# Example usage: configure_ufw_firewall 22
+
+Chapter 18: Testing the Installation
+
+After running the RabbitMQ Installation Script, it is important to test whether everything is working correctly. This chapter provides instructions on how to test the installation to ensure that RabbitMQ is functioning properly.
+ 
+# Test RabbitMQ installation
+test_rabbitmq_installation() {
+    echo "Testing RabbitMQ installation..."
+    rabbitmqctl status
+    rabbitmq-plugins list
+}
+
+test_rabbitmq_installation
+
+To verify the status of RabbitMQ, follow these steps:
+
+1. Open a terminal.
+2. Run the command: rabbitmqctl status
+
+If RabbitMQ is running correctly, you will see information about the Rabbit
+
+MQ nodes, including their status and other details.
+
+Section 18.2: Accessing the RabbitMQ Management Interface
+
+To access the RabbitMQ management interface, which provides a web-based interface for managing and monitoring RabbitMQ, follow these steps:
+
+1. Open a web browser.
+2. Enter the URL: http://privateip:15672/
+3. Enter the username and password for the administrator account created during the installation.
+
+If successful, you will be able to access the RabbitMQ management interface and perform various management tasks.
+
+Section 18.3: Testing Message Exchange
+
+To test if RabbitMQ is properly exchanging messages, you can use a simple script to send and receive messages. The script should utilize RabbitMQ's messaging API and demonstrate the ability to send and receive messages between producers and consumers.
+
+Chapter 19: Conclusion
+
+Congratulations! You have successfully installed RabbitMQ using the RabbitMQ Installation Script. This script simplifies the installation process and ensures that all necessary dependencies and configurations are in place. You can now start using RabbitMQ for reliable messaging between your applications and systems. Happy messaging!
+
+In conclusion, the RabbitMQ Installation Script simplifies the installation and configuration process of RabbitMQ on Ubuntu-based systems. By automating the setup steps, the script saves time and effort, allowing users to quickly start using RabbitMQ for reliable messaging.
+
+By following the provided instructions and testing the installation, users can ensure that RabbitMQ is functioning correctly and ready for production use. The script also enhances security by managing user accounts, enabling remote access, and configuring the firewall.
+
+With RabbitMQ installed and properly configured, users can leverage its powerful messaging capabilities to build scalable and robust applications that require reliable communication between components.
+
+
+
+
+******************************************************************************************************************************************
+
+The location where these RabbitMQ are installed can vary depending on the operating system and the specific installation method used. Here are some common locations for the mentioned components:
+
+Root Check: This is not an installation but rather a step to verify if the user performing the installation has administrative/root privileges.
+
+Dependency Check and Installation: Dependencies are typically installed in system directories or package managers. For example, on Linux distributions using package managers like apt or yum, dependencies are installed in predefined system directories such as /usr/lib or /usr/local/lib.
+
+Importing GPG Keys: GPG keys are usually imported into the user's GPG keyring, which is typically located in the user's home directory under ~/.gnupg/.
+
+Adding RabbitMQ Repositories: The RabbitMQ repositories are added to the system's package manager configuration files. On Linux systems, these files are usually located under /etc/apt/sources.list.d/ or /etc/yum.repos.d/ for apt and yum package managers, respectively.
+
+Erlang Package Installation: The Erlang packages are installed using the system's package manager, and their files are placed in the appropriate directories based on the operating system. On Linux, Erlang files are commonly located in directories like /usr/lib/erlang/.
+
+RabbitMQ Server Installation: The RabbitMQ server files are typically installed in a directory specific to the operating system. On Linux, the server files might be located in /usr/lib/rabbitmq/.
+
+Plugin Installation: Plugins for RabbitMQ are usually installed in a directory specific to RabbitMQ, which could be something like /usr/lib/rabbitmq/plugins/.
+
+Enabling Plugins: Enabling plugins often involves modifying RabbitMQ configuration files. The main configuration file for RabbitMQ is commonly located at /etc/rabbitmq/rabbitmq.conf.
+
+Setting Policies: Setting policies involves modifying the RabbitMQ configuration file as well. The location of the configuration file is mentioned above.
+
+User Management: User management tasks are performed using RabbitMQ's command-line tools or management plugins. The specific location for these tools can vary depending on the installation method and operating system.
+
+Firewall Configuration: Firewall configurations are managed by the operating system's firewall software. On Linux, the firewall configuration is usually stored in files under /etc directory, such as /etc/iptables/ or /etc/firewalld/.
+
+Testing the Installation: Testing can involve various actions depending on the specific requirements. It might involve running scripts or commands provided by RabbitMQ or executing custom test programs. The location of the testing artifacts would depend on the specific test being performed.
+
+Please note that these locations are general guidelines, and the actual locations may vary depending on the choices made during installation and the specific configuration of your system.
+
+
+
+Here's the information organized in a tabular format:
+
+
+Component	Location
+Root Check	Not an installation, but typically performed by a user with administrative/root privileges.
+Dependency Check and Installation	System directories or package managers (e.g., /usr/lib, /usr/local/lib).
+Importing GPG Keys	User's GPG keyring (~/.gnupg/).
+Adding RabbitMQ Repositories	System's package manager configuration files (e.g., /etc/apt/sources.list.d/, /etc/yum.repos.d/).
+Erlang Package Installation	System's package manager directories (e.g., /usr/lib/erlang/).
+RabbitMQ Server Installation	RabbitMQ server directory (e.g., /usr/lib/rabbitmq/).
+Plugin Installation	RabbitMQ plugin directory (e.g., /usr/lib/rabbitmq/plugins/).
+Enabling Plugins	RabbitMQ configuration file (e.g., /etc/rabbitmq/rabbitmq.conf).
+Setting Policies	RabbitMQ configuration file (e.g., /etc/rabbitmq/rabbitmq.conf).
+User Management	Depends on the specific tools and plugins used.
+Firewall Configuration	Operating system's firewall configuration files (e.g., /etc/iptables/, /etc/firewalld/).
+Testing the Installation	Depends on the specific test being performed.
+
+Here's a table showing the default locations for data and logs in RabbitMQ on Linux (Ubuntu 20.04):
+
+Directory	Location
+Data Directory	/var/lib/rabbitmq/
+Log Directory	/var/log/rabbitmq/
+
+
+Configuration files:
+
+Main configuration file: /etc/rabbitmq/rabbitmq.conf
+RabbitMQ environment variables: /etc/rabbitmq/rabbitmq-env.conf
+RabbitMQ log configuration: /etc/rabbitmq/logging.conf
+RabbitMQ configuration directory: /etc/rabbitmq/
+Log files:
+
+RabbitMQ log directory: /var/log/rabbitmq/
+Main RabbitMQ log file: /var/log/rabbitmq/rabbitmq.log
+RabbitMQ startup log: /var/log/rabbitmq/startup_log
+RabbitMQ startup log errors: /var/log/rabbitmq/startup_err
+Data directory:
+
+RabbitMQ data directory: /var/lib/rabbitmq/
+PID file:
+
+RabbitMQ PID file: /var/run/rabbitmq/pid
+
+
+SSL/TLS-related files:
+
+SSL certificate directory: /etc/rabbitmq/ssl/
+SSL certificate authority (CA) file: /etc/rabbitmq/ssl/cacert.pem
+Server certificate file: /etc/rabbitmq/ssl/cert.pem
+Server private key file: /etc/rabbitmq/ssl/key.pem
+Plugin-related files:
+
+RabbitMQ plugins directory: /usr/lib/rabbitmq/lib/rabbitmq_server-<version>/plugins/
+Enabled plugins file: /etc/rabbitmq/enabled_plugins
+Plugin-specific configuration files: /etc/rabbitmq/conf.d/
+ErLang-related files:
+
+Erlang cookie file: /var/lib/rabbitmq/.erlang.cookie
+Erlang log directory: /var/log/rabbitmq/erlang.log
+Mnesia database directory:
+
+Mnesia database directory: /var/lib/rabbitmq/mnesia/
+Configuration backup and restore:
+
+Configuration backup directory: /var/lib/rabbitmq/backup/
+
+Log files:
+
+RabbitMQ log directory: /var/log/rabbitmq/
+RabbitMQ log file: /var/log/rabbitmq/rabbit@<hostname>.log (e.g., rabbit@localhost.log)
+Configuration files:
+
+RabbitMQ main configuration file: /etc/rabbitmq/rabbitmq.conf
+RabbitMQ environment configuration file: /etc/rabbitmq/rabbitmq-env.conf
+RabbitMQ advanced configuration file: /etc/rabbitmq/advanced.config
+Node-specific files:
+
+RabbitMQ node database directory: /var/lib/rabbitmq/mnesia/<node-name>/
+RabbitMQ node configuration directory: /etc/rabbitmq/rabbitmq_<node-name>/
+RabbitMQ node-specific environment configuration file: /etc/rabbitmq/rabbitmq_<node-name>/rabbitmq-env.conf
+RabbitMQ node-specific log directory: /var/log/rabbitmq/<node-name>/
+Erlang-specific files:
+
+Erlang runtime parameters file: /etc/rabbitmq/erlang.cookie
+systemd service unit:
+
+RabbitMQ systemd service unit file: /etc/systemd/system/rabbitmq-server.service
+
