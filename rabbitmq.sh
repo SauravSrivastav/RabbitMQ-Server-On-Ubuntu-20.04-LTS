@@ -83,7 +83,7 @@ erlang_packages
 # Install RabbitMQ server
 if ! dpkg -s rabbitmq-server &> /dev/null; then
     echo "Installing RabbitMQ server..."
-    apt-get install -y rabbitmq-server --fix-missing
+    apt-get install -y rabbitmq-server=3.11.17-1
 fi
 
 # Download and install rabbitmq_delayed_message_exchange plugin
